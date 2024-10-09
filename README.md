@@ -11,4 +11,4 @@ Of course, the login form has many social buttons, but if your organization uses
 <h2>Screenshot</h2>
 Below you can see what the login form will look like. Of course, you can customize and use only one provider if you want.<br/><br/>
 
-![login_page1](https://github.com/user-attachments/assets/960e9f16-9961-4e90-950e-2bed5f04ef09)
+![login_page](https://github.com/user-attachments/assets/df540a8e-cd19-4517-a91d-9a7bf029c213)
