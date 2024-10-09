@@ -11,6 +11,65 @@
  *
  */
 
+//Checking if the access_token is still valid
+if (isset($_SESSION['logged_auth'])) {   
+	
+	define('IN_SCRIPT',1);
+	define('HESK_PATH','../');
+	
+	// Get all the required files and functions
+    require(HESK_PATH . 'hesk_settings.inc.php');
+    require(HESK_PATH . 'keycloak/data.php');
+	
+	//Special class keycloak in CSS
+	echo "<script>$('body').addClass('keycloak');</script>";
+	
+    // Function to execute cURL request and handle errors
+    function curlRequest($url, $method = 'GET', $headers = [], $post_fields = null, $admin_dir) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+		
+        if ($method === 'POST' && $post_fields) {
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($post_fields));
+        }
+		
+        if ($headers) {
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        }
+
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+		
+        if ($http_code !== 200) {
+            // Redirect if response is not 200
+			header("Location: ../$admin_dir/index.php?a=logout&token={$_SESSION['token']}&token_auth_expired=true");
+            exit();
+        }
+
+        return $response;
+    }
+
+    // Check if access token is expired
+    if (time() > $_SESSION['access_token_expires_in_auth']) {
+        // Refresh access token
+        $response = curlRequest($token_endpoint, 'POST', [], ['grant_type' => 'refresh_token', 'client_id' => $client_id, 'client_secret' => $client_secret, 'refresh_token' => $_SESSION['refresh_token_auth']], $hesk_settings['admin_dir']);
+        
+        $res = json_decode($response, true);
+        $_SESSION['access_token_expires_in_auth'] = time() + $res['expires_in'];
+        $_SESSION['access_token_auth'] = $res['access_token'];
+    }
+	else {
+		// Check if access token hasn't been revoke
+		$response = curlRequest($userinfo_endpoint, 'GET', ['Authorization: Bearer ' . $_SESSION['access_token_auth']], null , $hesk_settings['admin_dir']);
+	}
+}
+
 /* Check if this is a valid include */
 if (!defined('IN_SCRIPT')) {die('Invalid attempt');} 
 
