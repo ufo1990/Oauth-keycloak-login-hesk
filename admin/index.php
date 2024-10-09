@@ -18,10 +18,21 @@ define('HESK_PATH','../');
 require(HESK_PATH . 'hesk_settings.inc.php');
 require(HESK_PATH . 'inc/common.inc.php');
 require(HESK_PATH . 'inc/admin_functions.inc.php');
+require(HESK_PATH . 'keycloak/data.php');
 hesk_load_database_functions();
 
 hesk_session_start();
 hesk_dbConnect();
+
+//Logout Keycloak OAuth
+function logoutAuth() {
+    global $hesk_settings, $end_session_endpoint, $hesklang;
+
+    if (isset($_SESSION['logged_auth']) || ($_GET['user'] == 'unfinded')) {    
+        unset($_SESSION['logged_auth']);
+        header("refresh:2; url=$end_session_endpoint?id_token_hint={$_SESSION['id_token_auth']}&post_logout_redirect_uri={$hesk_settings['hesk_url']}/{$hesk_settings['admin_dir']}");
+    }
+}
 
 /* What should we do? */
 $action = hesk_REQUEST('a');
@@ -44,6 +55,7 @@ switch ($action)
     	print_login();
         break;
     case 'logout':
+        logoutAuth();
     	logout();
         break;
     default:
@@ -392,6 +404,37 @@ function do_backup_email_verification() {
 function print_login()
 {
 	global $hesk_settings, $hesklang;
+    
+    //Login via OAuth
+	if (isset($_SESSION['logged_auth'])) 
+    { 
+        //Check user by email logged 
+		$result = hesk_dbQuery("SELECT user FROM `".hesk_dbEscape($hesk_settings['db_pfix'])."users` WHERE `email` = '".hesk_dbEscape($_SESSION['email_auth'])."' LIMIT 1"); 
+
+		if (hesk_dbNumRows($result) == true) 
+        { 
+			//Find user in database 
+			$row = $result->fetch_assoc(); 
+
+			$result2 = hesk_dbQuery("SELECT * FROM `".hesk_dbEscape($hesk_settings['db_pfix'])."users` WHERE `user` = '".hesk_dbEscape($row['user'])."' LIMIT 1"); 
+			$user_row = hesk_dbFetchAssoc($result2); 
+
+			process_successful_login($user_row); 
+			exit(); 
+		} 
+		else 
+        {  
+			//Redericted when not find user in database 
+            hesk_process_messages($hesklang['wrong_user'],'NOREDIRECT');
+			header('Location:index.php?a=logout'); 
+			exit(); 
+		} 
+	} 
+
+    //Session expired or revoke token Oauth
+    if ( hesk_isREQUEST('token_auth_expired') ) {
+		header('Location: index.php?a=login&notice=true'); 
+    }
 
 	// Tell header to load reCaptcha API if needed
 	if ($hesk_settings['recaptcha_use'])
@@ -570,6 +613,12 @@ function print_login()
                                     echo '<input type="hidden" name="goto" value="'.$url.'">';
                                 }
                                 ?>
+                            </div>
+                            <div class="seperate"><?= strtoupper($hesklang['or']) ?></div>
+							<div class="form__submit">
+								<button type="button" class="btn btn-full social" onclick="location.href='<?= "{$hesk_settings['hesk_url']}" ?>/keycloak?kc_idp_hint=google'"><img src="https://www.google.com/favicon.ico">Google</button>
+    	                        <button type="button" class="btn btn-full social" onclick="location.href='<?= "{$hesk_settings['hesk_url']}" ?>/keycloak?kc_idp_hint=microsoft'"><img src="https://www.microsoft.com/favicon.ico">Microsoft</button>
+                                <button type="button" class="btn btn-full social" onclick="location.href='<?= "{$hesk_settings['hesk_url']}" ?>/keycloak?kc_idp_hint=facebook'"><img src="https://www.facebook.com/favicon.ico">Facebook</button>					
                             </div>
                             <?php if ($hesk_settings['reset_pass']): ?>
                                 <div class="reg__footer">
