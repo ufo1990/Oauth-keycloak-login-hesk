@@ -1,0 +1,37 @@
+.keycloak .main__content.profile .profile__edit:nth-child(2), .keycloak .main__content.profile article:nth-child(2) {
+	display:none !important;
+}
+.seperate + .form__submit {
+	flex-direction: column;
+	gap: 10px;
+}
+.seperate + .form__submit .btn-full.social {
+	background-color: #fff;
+	color: #133e5e;
+	border: 1px solid #133e5e;
+	column-gap: 5px;
+}
+.seperate + .form__submit .btn-full.social img {
+	width: 20px;
+	height: 20px;
+}
+.seperate {
+	-moz-box-align: center;
+	display: flex;
+	align-items: center;
+	margin: 24px 0 0 0;
+}
+.seperate::before, .seperate::after {
+	content: "";
+	display: block;
+	width: 100%;
+	margin: 0 auto;
+	height: 1px;
+	background-color: #2c70a2;
+}
+.seperate::before { 
+	margin-right:20px; 
+} 
+.seperate::after { 
+	margin-left:20px; 
+} 
