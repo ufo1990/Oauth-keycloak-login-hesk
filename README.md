@@ -1,5 +1,5 @@
 <h1>Oauth keycloak login for HESK</h1>
-Code works with release <b>HESK 3.4.6</b>.
+Code works with release <b>HESK 3.5.X</b>.
 <h2>How to use</h2>
 Copy all directories to the main HESK installation, but if your admin folder in hesk settings has a different name, then before copying you need to change the admin directory to your name.
 <br/><br/>
